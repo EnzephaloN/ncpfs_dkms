@@ -1,7 +1,7 @@
 # NCPFS module for Linux >4.16#
 ## load with DKMS ##
 
-    git clone https://github.com/EnzephaloN/ncpfs_dkms.git
+    git clone https://github.com/EnzephaloN/ncpfs_dkms.git ncpfs
     
     sudo cp -r ncpfs /usr/src/ncpfs-2.2.6
     sudo dkms add -m ncpfs -v 2.2.6
