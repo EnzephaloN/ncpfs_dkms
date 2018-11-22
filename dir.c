@@ -71,7 +71,7 @@ const struct inode_operations ncp_dir_inode_operations =
 };
 
 /**
- * dentry_update_name_case - update case insensitive dentry with a new name
+ * new_dentry_update_name_case - update case insensitive dentry with a new name
  * @dentry: dentry to be updated
  * @name: new name
  *
@@ -84,7 +84,7 @@ const struct inode_operations ncp_dir_inode_operations =
  * Parent inode i_mutex must be held over d_lookup and into this call (to
  * keep renames and concurrent inserts, and readdir(2) away).
  */
-void dentry_update_name_case(struct dentry *dentry, const struct qstr *name)
+void new_dentry_update_name_case(struct dentry *dentry, const struct qstr *name)
 {
 	BUG_ON(!inode_is_locked(dentry->d_parent->d_inode));
 	BUG_ON(dentry->d_name.len != name->len); /* d_lookup gives this */
@@ -95,7 +95,7 @@ void dentry_update_name_case(struct dentry *dentry, const struct qstr *name)
 	write_seqcount_end(&dentry->d_seq);
 	spin_unlock(&dentry->d_lock);
 }
-EXPORT_SYMBOL(dentry_update_name_case);
+EXPORT_SYMBOL(new_dentry_update_name_case);
 
 /*
  * Dentry operations routines
@@ -636,7 +636,7 @@ ncp_fill_cache(struct file *file, struct dir_context *ctx,
 		 * server. Parent dir's i_mutex is locked because we're in
 		 * readdir.
 		 */
-		dentry_update_name_case(newdent, &qname);
+		new_dentry_update_name_case(newdent, &qname);
 	}
 
 	if (d_really_is_negative(newdent)) {
