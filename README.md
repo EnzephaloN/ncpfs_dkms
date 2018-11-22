@@ -7,6 +7,6 @@
     sudo dkms add -m ncpfs -v 2.2.6
     sudo dkms build -m ncpfs -v 2.2.6 && sudo dkms install -m ncpfs -v 2.2.6 || true
 
-## also available as standalone-module
+## also available as standalone-module ##
 
 https://github.com/EnzephaloN/ncpfs-module.git
