@@ -10,3 +10,8 @@
 ## also available as standalone-module ##
 
 https://github.com/EnzephaloN/ncpfs-module.git
+
+
+## Issues
+
+Does not work with kernel above 5.1. Feel free to send me patches!
