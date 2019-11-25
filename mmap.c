@@ -90,7 +90,7 @@ static unsigned int ncp_file_mmap_fault(struct vm_fault *vmf)
 	 * -- nyc
 	 */
 	count_vm_event(PGMAJFAULT);
-	count_memcg_event_mm(vmf->vma->vm_mm, PGMAJFAULT);
+//	count_memcg_event_mm(vmf->vma->vm_mm, PGMAJFAULT);
 	return VM_FAULT_MAJOR;
 }
 
