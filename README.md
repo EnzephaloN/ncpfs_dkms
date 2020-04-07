@@ -1,4 +1,4 @@
-# NCPFS module for Linux >= 5.2 #
+# NCPFS module for Linux >= 5.6 #
 ## load with DKMS ##
 
     git clone https://github.com/EnzephaloN/ncpfs_dkms.git ncpfs
