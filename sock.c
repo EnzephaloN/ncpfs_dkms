@@ -255,7 +255,7 @@ static void ncpdgram_start_request(struct ncp_server *server, struct ncp_request
 		req->tx_iov[2].iov_base = req->sign;
 		req->tx_iov[2].iov_len = signlen;
 	}
-	iov_iter_kvec(&req->from, ITER_KVEC,
+	iov_iter_kvec(&req->from, WRITE,
 			req->tx_iov + 1, signlen ? 2 : 1, len + signlen);
 	server->rcv.creq = req;
 	server->timeout_last = server->m.time_out;
