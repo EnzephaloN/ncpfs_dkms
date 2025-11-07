@@ -53,9 +53,9 @@ int ncp_close_file(struct ncp_server *, const char *);
 static inline int ncp_read_bounce_size(__u32 size) {
 	return sizeof(struct ncp_reply_header) + 2 + 2 + size + 8;
 };
-int ncp_read_bounce(struct ncp_server *, const char *, __u32, __u16, 
+int ncp_read_bounce(struct ncp_server *, const char *, __u32, __u16,
 		struct iov_iter *, int *, void *bounce, __u32 bouncelen);
-int ncp_read_kernel(struct ncp_server *, const char *, __u32, __u16, 
+int ncp_read_kernel(struct ncp_server *, const char *, __u32, __u16,
 		char *, int *);
 int ncp_write_kernel(struct ncp_server *, const char *, __u32, __u16,
 		const char *, int *);
@@ -206,7 +206,7 @@ union ncp_dir_cache {
 
 struct ncp_cache_control {
 	struct	ncp_cache_head		head;
-	struct	page			*page;
+	struct	folio			*folio;
 	union	ncp_dir_cache		*cache;
 	unsigned long			fpos, ofs;
 	int				filled, valid, idx;

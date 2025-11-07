@@ -84,7 +84,7 @@ const struct inode_operations ncp_dir_inode_operations =
  * Parent inode i_mutex must be held over d_lookup and into this call (to
  * keep renames and concurrent inserts, and readdir(2) away).
  */
-void new_dentry_update_name_case(struct dentry *dentry, const struct qstr *name)
+void new_dentry_update_name_case(struct dentry *, const struct qstr *)
 {
 	BUG_ON(!inode_is_locked(dentry->d_parent->d_inode));
 	BUG_ON(dentry->d_name.len != name->len); /* d_lookup gives this */
@@ -437,14 +437,14 @@ static int ncp_readdir(struct file *file, struct dir_context *ctx)
 {
 	struct dentry *dentry = file->f_path.dentry;
 	struct inode *inode = d_inode(dentry);
-	struct page *page = NULL;
+	struct folio *folio;
 	struct ncp_server *server = NCP_SERVER(inode);
 	union  ncp_dir_cache *cache = NULL;
 	struct ncp_cache_control ctl;
 	int result, mtime_valid = 0;
 	time64_t mtime = 0;
 
-	ctl.page  = NULL;
+	ctl.folio  = NULL;
 	ctl.cache = NULL;
 
 	ncp_dbg(2, "reading %pD2, pos=%d\n", file, (int)ctx->pos);
@@ -458,14 +458,14 @@ static int ncp_readdir(struct file *file, struct dir_context *ctx)
 	if (!dir_emit_dots(file, ctx))
 		goto out;
 
-	page = grab_cache_page(&inode->i_data, 0);
-	if (!page)
+	folio = filemap_grab_folio(&inode->i_data, 0);
+	if (!folio)
 		goto read_really;
 
-	ctl.cache = cache = kmap(page);
+		ctl.cache = cache = kmap_local_folio(folio, 0);
 	ctl.head  = cache->head;
 
-	if (!PageUptodate(page) || !ctl.head.eof)
+	if (!folio_test_uptodate(folio) || !ctl.head.eof)
 		goto init_cache;
 
 	if (ctx->pos == 2) {
@@ -487,11 +487,11 @@ static int ncp_readdir(struct file *file, struct dir_context *ctx)
 
 	for (;;) {
 		if (ctl.ofs != 0) {
-			ctl.page = find_lock_page(&inode->i_data, ctl.ofs);
-			if (!ctl.page)
+		ctl.folio = filemap_grab_folio(&inode->i_data, ctl.ofs);
+			if (!ctl.folio)
 				goto invalid_cache;
-			ctl.cache = kmap(ctl.page);
-			if (!PageUptodate(ctl.page))
+				ctl.cache = kmap_local_folio(ctl.folio,0);
+			if (!folio_test_uptodate(ctl.folio))
 				goto invalid_cache;
 		}
 		while (ctl.idx < NCP_DIRCACHE_SIZE) {
@@ -524,22 +524,22 @@ static int ncp_readdir(struct file *file, struct dir_context *ctx)
 			if (ctx->pos > ctl.head.end)
 				goto finished;
 		}
-		if (ctl.page) {
-			kunmap(ctl.page);
-			SetPageUptodate(ctl.page);
-			unlock_page(ctl.page);
-			put_page(ctl.page);
-			ctl.page = NULL;
+		if (ctl.folio) {
+			kunmap_local(ctl.folio);
+			folio_mark_uptodate(ctl.folio);
+			folio_unlock(ctl.folio);
+			folio_put(ctl.folio);
+			ctl.folio = NULL;
 		}
 		ctl.idx  = 0;
 		ctl.ofs += 1;
 	}
 invalid_cache:
-	if (ctl.page) {
-		kunmap(ctl.page);
-		unlock_page(ctl.page);
-		put_page(ctl.page);
-		ctl.page = NULL;
+    if (ctl.folio) {
+		kunmap_local(ctl.folio);
+		folio_unlock(ctl.folio);
+		folio_put(ctl.folio);
+		ctl.folio = NULL;
 	}
 	ctl.cache = cache;
 init_cache:
@@ -568,18 +568,18 @@ read_really:
 	ctl.head.end = ctl.fpos - 1;
 	ctl.head.eof = ctl.valid;
 finished:
-	if (ctl.page) {
-		kunmap(ctl.page);
-		SetPageUptodate(ctl.page);
-		unlock_page(ctl.page);
-		put_page(ctl.page);
+    if (ctl.folio) {
+		kunmap_local(ctl.folio);
+		folio_mark_uptodate(ctl.folio);
+		folio_unlock(ctl.folio);
+		folio_put(ctl.folio);
 	}
-	if (page) {
+	if (folio) {
 		cache->head = ctl.head;
-		kunmap(page);
-		SetPageUptodate(page);
-		unlock_page(page);
-		put_page(page);
+		kunmap_local(folio);
+		folio_mark_uptodate(folio);
+		folio_unlock(folio);
+		folio_put(folio);
 	}
 out:
 	return result;
@@ -663,18 +663,18 @@ ncp_fill_cache(struct file *file, struct dir_context *ctx,
 	}
 
 	if (ctl.idx >= NCP_DIRCACHE_SIZE) {
-		if (ctl.page) {
-			kunmap(ctl.page);
-			SetPageUptodate(ctl.page);
-			unlock_page(ctl.page);
-			put_page(ctl.page);
+		if (ctl.folio) {
+    		kunmap_local(ctl.folio);
+    		folio_mark_uptodate(ctl.folio);
+    		folio_unlock(ctl.folio);
+    		folio_put(ctl.folio);
 		}
 		ctl.cache = NULL;
 		ctl.idx  -= NCP_DIRCACHE_SIZE;
 		ctl.ofs  += 1;
-		ctl.page  = grab_cache_page(&dir->i_data, ctl.ofs);
-		if (ctl.page)
-			ctl.cache = kmap(ctl.page);
+		ctl.folio  = filemap_grab_folio(&dir->i_data, ctl.ofs);
+		if (ctl.folio)
+			ctl.cache = kmap_local_folio(ctl.folio,0);
 	}
 	if (ctl.cache) {
 		if (d_really_is_positive(newdent)) {
