@@ -38,8 +38,9 @@ else
 # any valid path to the directory in which the target kernel's source is located
 # can be provided on the command line.
 #
-KDIR	?= /lib/modules/${kernelver}/build
-MDIR	?= /lib/modules/${kernelver}
+KVER	?= $(shell uname -r)
+KDIR	?= /lib/modules/$(KVER)/build
+MDIR	?= /lib/modules/$(KVER)
 PWD	:= $(shell pwd)
 
 export CONFIG_NCP_FS := m
@@ -56,11 +57,11 @@ help:
 install: ncpfs.ko
 	rm -f ${MDIR}/kernel/drivers/staging/ncpfs/ncpfs.ko
 	install -m644 -b -D ncpfs.ko ${MDIR}/kernel/drivers/staging/ncpfs/ncpfs.ko
-	depmod -aq
+	depmod -a
 
 uninstall:
 	rm -rf ${MDIR}/kernel/drivers/staging/ncpfs/ncpfs.ko
-	depmod -aq
+	depmod -a
 
 endif
 
